@@ -1,7 +1,7 @@
 # Dislike
 
 Do you, like,... dislike constantly saying "like" as much as I do?
-Then, like,... you've come the right, place!
+Then, like,... you've come the right place!
 
 This tool is like EXACTLY what you need to like stop saying "like".
 
