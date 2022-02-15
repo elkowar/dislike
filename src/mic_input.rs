@@ -48,10 +48,8 @@ fn spawn_listen_thread(send_samples: Sender<Vec<i16>>, recv_stop: Receiver<()>) 
     let host = cpal::default_host();
 
     let device = host
-        .input_devices()
-        .context("Failed to find input devices")?
-        .find(|d| d.name().unwrap() == "pipewire" || d.name().unwrap() == "pulse")
-        .context("Failed to find supported input device")?;
+        .default_input_device()
+        .context("Failed to find default input device")?;
     let input_config = device
         .supported_input_configs()
         .context("Failed to get supported input-config")?
