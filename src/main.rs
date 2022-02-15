@@ -80,7 +80,7 @@ impl SampleHandler {
                 .find(|word| decode_result.contains(*word));
             if let Some(word) = triggered_word {
                 println!("triggered because of: {}", word);
-                if let Err(err) = (*self.on_trigger)(&word) {
+                if let Err(err) = (*self.on_trigger)(word) {
                     eprintln!("Error running on-trigger command: {}", err);
                 }
                 self.flush()?;

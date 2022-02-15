@@ -72,20 +72,13 @@ fn spawn_listen_thread(send_samples: Sender<Vec<i16>>, recv_stop: Receiver<()>) 
 
     stream.play().unwrap();
 
-    loop {
-        match recv_stop.recv() {
-            Ok(_) => {
-                stream.pause().unwrap();
-                drop(stream);
-                break;
-            }
-            Err(err) => {
-                stream.pause().unwrap();
-                eprintln!("Error receiving stop signal: {}", err);
-                break;
-            }
-        }
+    // Wait for stop signal
+    if let Err(err) = recv_stop.recv() {
+        eprintln!("Error receiving stop signal: {}", err);
     }
+    stream.pause().unwrap();
+    drop(stream);
+
     Ok(())
 }
 
