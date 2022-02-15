@@ -1,9 +1,8 @@
 [package]
-
-
 name = "dislike"
 version = "0.1.0"
 edition = "2021"
+description ="Listens to you talk, and reminds you to not say certain words whenever you do."
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

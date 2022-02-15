@@ -1,5 +1,7 @@
 mod mic_input;
 mod opts;
+use std::{io::Write, process::Command};
+
 use anyhow::Result;
 
 use opts::*;
@@ -7,15 +9,26 @@ use opts::*;
 fn main() -> Result<()> {
     let opts = Opts::from_cli();
 
-    let (send, recv) = std::sync::mpsc::channel::<Vec<i16>>();
-    let listener = std::thread::spawn(move || match mic_input::init_listening(send) {
-        Ok(_) => println!("Stopped listening"),
-        Err(e) => eprintln!("{}", e),
-    });
+    let mic_input = mic_input::MicInput::init()?;
 
-    let mut sample_handler = SampleHandler::new(&opts).unwrap();
+    let on_trigger = {
+        let command_opt = opts.command.clone();
+        move |word: &str| {
+            if let Some(cmd) = &command_opt {
+                let process = Command::new("bash")
+                    .arg("-c")
+                    .arg(cmd)
+                    .stdin(std::process::Stdio::piped())
+                    .spawn()?;
+                process.stdin.unwrap().write_all(word.as_bytes())?;
+            }
+            Ok(())
+        }
+    };
+
+    let mut sample_handler = SampleHandler::new(&opts, Box::new(on_trigger))?;
     let mut sample_cnt = 0;
-    while let Ok(data) = recv.recv() {
+    while let Ok(data) = mic_input.wait_for_samples() {
         sample_handler.on_samples(&data).unwrap();
         sample_cnt += 1;
         if sample_cnt > 1000 {
@@ -23,7 +36,8 @@ fn main() -> Result<()> {
             sample_cnt = 0;
         }
     }
-    listener.join().unwrap();
+
+    mic_input.stop();
 
     Ok(())
 }
@@ -31,10 +45,12 @@ fn main() -> Result<()> {
 struct SampleHandler {
     model: deepspeech::Model,
     stream: deepspeech::Stream,
-    words: Vec<String>,
+    trigger_words: Vec<String>,
+    last_word: String,
+    on_trigger: Box<dyn Fn(&str) -> Result<()>>,
 }
 impl SampleHandler {
-    pub fn new(opts: &Opts) -> Result<Self> {
+    pub fn new(opts: &Opts, on_trigger: Box<dyn Fn(&str) -> Result<()>>) -> Result<Self> {
         let mut model = deepspeech::Model::load_from_files(&opts.model_path)?;
 
         let stream = model.create_stream()?;
@@ -42,23 +58,31 @@ impl SampleHandler {
         Ok(Self {
             model,
             stream,
-            words: opts.words.clone(),
+            trigger_words: opts.words.clone(),
+            last_word: String::new(),
+            on_trigger,
         })
     }
 
     fn on_samples(&mut self, data: &[i16]) -> Result<()> {
         self.stream.feed_audio(data);
-        if let Ok(x) = self.stream.intermediate_decode() {
-            if let Some(word) = x.split(' ').last() {
-                println!("{}", word);
+        if let Ok(decode_result) = self.stream.intermediate_decode() {
+            if let Some(word) = decode_result.split(' ').last() {
+                if word != self.last_word {
+                    self.last_word = word.to_string();
+                    println!("{}", word);
+                }
             }
 
-            if self.words.iter().any(|word| x.contains(word)) {
-                println!("fuck you");
-                std::process::Command::new("espeak")
-                    .args(["fuck you"])
-                    .spawn()
-                    .unwrap();
+            let triggered_word = self
+                .trigger_words
+                .iter()
+                .find(|word| decode_result.contains(*word));
+            if let Some(word) = triggered_word {
+                println!("triggered because of: {}", word);
+                if let Err(err) = (*self.on_trigger)(&word) {
+                    eprintln!("Error running on-trigger command: {}", err);
+                }
                 self.flush()?;
             }
         }
