@@ -5,12 +5,11 @@ Then, like,... you've come the right place!
 
 This tool is like EXACTLY what you need to like stop saying "like".
 
-Currently still, like, _very_ work in progress,
-you'll need to download the deepspeech model file and, like, provide the path to it to `dislike`
-via the, like, `--model` argument.
-Like,... you can get the file from [here](https://github.com/mozilla/DeepSpeech/releases/download/v0.9.0/deepspeech-0.9.0-models.pbmm).
-Once you, like, have that, just like run the program, and have it, like, listen to what you say,
-and, like, react to it!
+## Setup
+1. [Install the deepspeech library on your, like, system.](https://github.com/RustAudio/deepspeech-rs#quickstart)
+2. Like,.... Download the [deepspeech model file (version 0.9.0)](https://github.com/RustAudio/deepspeech-rs#quickstart)
+3. Run `dislike`, providing the, like, path to the like model file via the, like, `--model` argument.
+4. Once you, like, have that, just like run the program, and have it, like, listen to what you say, and, like, react to it!
 
 You can, like, run `dislike --help` to get some more, like, info on the command line arguments you
 can, like, pass it.
