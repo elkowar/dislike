@@ -15,7 +15,7 @@ fn main() -> Result<()> {
         let command_opt = opts.command.clone();
         move |word: &str| {
             if let Some(cmd) = &command_opt {
-                let process = Command::new("bash")
+                let process = Command::new("sh")
                     .arg("-c")
                     .arg(cmd)
                     .stdin(std::process::Stdio::piped())
